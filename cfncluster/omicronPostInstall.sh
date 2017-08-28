@@ -53,6 +53,10 @@ if (grep -q "MasterServer" /var/log/cfn-wire.log); then
 
 else
   echo Compute
+
+  useradd -u 1450 galaxy
+  ln -s /export/galaxy-central /galaxy-central
+  ln -s /export/shed_tools /shed_tools
   cp -p /export/R-lib.tar.xz / && pushd / && tar xJf R-lib.tar.xz && popd
 
 fi

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 if (grep -q "MasterServer" /var/log/cfn-wire.log); then
   echo Master
@@ -19,14 +20,22 @@ if (grep -q "MasterServer" /var/log/cfn-wire.log); then
   ln -s /export/galaxy-central /galaxy-central
   ln -s /export/shed_tools /shed_tools
 
-  docker run --name omicron -d --restart=on-failure:10 --net=host
-    -v /export/:/export/
-    -v /opt/slurm/:/opt/slurm/
-    -v /etc/munge:/etc/munge
-    -e GALAXY_CONFIG_FTP_UPLOAD_SITE=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
+  docker run --name omicron -d --restart=on-failure:10 --net=host \
+    -v /export/:/export/ \
+    -v /opt/slurm/:/opt/slurm/ \
+    -v /etc/munge:/etc/munge \
+    -e GALAXY_CONFIG_FTP_UPLOAD_SITE=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4) \
     chambm/omicron-cfncluster
 
-  docker exec omicron find / -uid 104 -exec chown -h $(id -u munge) {} +
+  while
+    echo "Waiting for Galaxy to start"
+    [[ $(docker exec omicron supervisorctl status galaxy:galaxy_web | grep -o RUNNING) != "RUNNING" ]]
+  do
+    sleep 1
+  done
+
+  container_munge_id=$(docker exec omicron id -u munge)
+  docker exec omicron find / -uid $container_munge_id -exec chown -h $(id -u munge) {} + || true
   docker exec omicron usermod -u $(id -u munge) munge
   docker exec omicron usermod -u $(id -u slurm) slurm
   docker exec omicron service munge start
@@ -41,10 +50,11 @@ if (grep -q "MasterServer" /var/log/cfn-wire.log); then
   Rscript --vanilla -e 'source("https://raw.githubusercontent.com/chambm/devtools/master/R/easy_install.R"); devtools::install_github("chambm/customProDB")'
   Rscript --vanilla -e 'source("http://bioconductor.org/biocLite.R"); biocLite(c("RGalaxy", "proBAMr"), ask=F)'
   tar cJf /export/R-lib.tar.xz /usr/lib64/R/library
+  cp /export/R-lib.tar.xz /shared/
 
 else
   echo Compute
-
+  cp /shared/R-lib.tar.xz /export/ 
   cp -p /export/R-lib.tar.xz / && pushd / && tar xJf R-lib.tar.xz && popd
 
 fi

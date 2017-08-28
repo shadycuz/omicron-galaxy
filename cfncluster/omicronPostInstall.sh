@@ -50,11 +50,9 @@ if (grep -q "MasterServer" /var/log/cfn-wire.log); then
   #Rscript --vanilla -e 'source("https://raw.githubusercontent.com/chambm/devtools/master/R/easy_install.R"); devtools::install_github("chambm/customProDB")'
   #Rscript --vanilla -e 'source("http://bioconductor.org/biocLite.R"); biocLite(c("RGalaxy", "proBAMr"), ask=F)'
   tar cJf /export/R-lib.tar.xz /usr/lib64/R/library
-  cp /export/R-lib.tar.xz /shared/
 
 else
   echo Compute
-  cp /shared/R-lib.tar.xz /export/ 
   cp -p /export/R-lib.tar.xz / && pushd / && tar xJf R-lib.tar.xz && popd
 
 fi

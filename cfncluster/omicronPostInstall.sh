@@ -22,7 +22,7 @@ if [ "$cfn_node_type" == "MasterServer" ]; then
     -v /opt/slurm/:/opt/slurm/ \
     -v /etc/munge:/etc/munge \
     -e "NONUSE=reports,slurmd,slurmctld,condor" \
-    -e GALAXY_CONFIG_FTP_UPLOAD_SITE=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4) \
+    -e GALAXY_CONFIG_FTP_UPLOAD_SITE=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4) \
     -e GALAXY_CONFIG_CLEANUP_JOB=onsuccess \
     chambm/omicron-cfncluster:release_17.05
 
